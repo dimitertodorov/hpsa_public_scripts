@@ -83,7 +83,7 @@ def get_policies(platform,sw_policy_filter=None,patch_policy_filter=None):
     policies['sw']=None
     policies['patch']=None
     swps=ts.swmgmt.SoftwarePolicyService
-    wpps=ts.swmgmt.SoftwarePolicyService
+    wpps=ts.swmgmt.WindowsPatchPolicyService
     if sw_policy_filter:
         swpf=Filter()
         swpf.expression="(software_policy_platform_id EQUAL_TO %s) & (%s)" %(platform.id, sw_policy_filter)
