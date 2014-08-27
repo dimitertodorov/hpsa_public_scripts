@@ -6,7 +6,7 @@ A collection of some scripts I have made for HPSA (HP Server Automation)
 ## Development and Testing
 Most of my development is done on a Windows server that is running the HPSA agent.
 
-In order to execute the scripts, you need to setup the following environment to bring the python binary into your path.
+In order to execute the scripts, you need to setup the following environment to bring the SA python binary into your path.
 
 ```
 setlocal

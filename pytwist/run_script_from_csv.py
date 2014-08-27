@@ -55,8 +55,6 @@ sys.path.append(pytwist_dir)
 from pytwist import *
 from pytwist.com.opsware.search import Filter
 from pytwist.com.opsware.fido import OperationConstants
-from pytwist.com.opsware.device import DeviceGroupRef
-from pytwist.com.opsware.job import JobRef,JobNotification,JobSchedule,JobInfoVO
 from pytwist.com.opsware.script import ServerScriptRef, ServerScriptJobArgs
 
 #Initialize the twist
