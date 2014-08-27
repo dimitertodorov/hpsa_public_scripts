@@ -229,7 +229,7 @@ if (__name__ == '__main__'):
 
             if opts.dry_run == 0:
                 job_ref = swps.startRemediate(prja)
-                log_string+= ",JOB_REF:" % job_ref
+                log_string+= ",JOB_REF:%s" % job_ref
             else:
                 log_string+= ",JOB_REF:DRY_RUN"
 
