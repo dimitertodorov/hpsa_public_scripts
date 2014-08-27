@@ -68,6 +68,8 @@ options:
                         of OGSH context.
   -e email, --email=email
                         (Required) E-Mail
+  --reboot=reboot       (Optional) Set to 1 if you want to reboot at the end
+                        of remediation.
   --server_filter=server_filter
                         (Required) Servers which to Remediate
   --facility_filter=facility_filter
@@ -94,6 +96,12 @@ options:
                         action stage will be separated by 5 minutes
   --chunk=chunk         (Optional) Maximum number of servers per job. Default:
                         50
+  --pre_script=pre_script
+                        (Optional) Long ID of Script to run before action
+                        stage.
+  --post_script=post_script
+                        (Optional) Long ID of Script to run after action
+                        stage.
   --dry_run=dry_run     (Optional) Specify 1 here to skip remediation. Only
                         print what would be done.
 ```
@@ -104,12 +112,43 @@ The following will do the following:
 * Find all Servers in Device Group 97960001
 * Filter and group by Facility containing 'GDCPZ' and Platform Containing 'Windows 2008' or 'Windows 2003'
 * Find all patch policies containg the name 'Security'
-* Find all software policies with primary keys matching 420001 940001
+* Find all software policies with name containing "Windows Users"
 * Chunk Jobs out into sizes of no more than 22
-* Analyze will start after 5 minutes (Default)
-* Action Time will start at the defined action time.
+* Analyze will start at defined time. Rest of the steps will follow.
+* Reboot will be at the end.
+* Pre and Post scripts are set
+
 ```
-python batch_remediate.py --server_filter="(device_group_id EQUAL_TO 97960001)" --patch_policy_filter="(PatchPolicyVO.name CONTAINS Security)" --sw_policy_filter="(SoftwarePolicyVO.pK IN 420001 940001)" --facility_filter="FacilityVO.name CONTAINS GDCPZ" --platform_filter="((platform_name CONTAINS \"Windows 2008\")|(platform_name CONTAINS \"Windows 2003\"))" --action_time="2014-08-27T01:44:15" --dry_run=1 --chunk 22
+python batch_remediate.py --server_filter="(device_group_id EQUAL_TO 97960001)" --patch_policy_filter="(PatchPolicyVO.name CONTAINS Security)" --sw_policy_filter="(SoftwarePolicyVO.name CONTAINS \"Windows Users\")" --facility_filter="FacilityVO.name CONTAINS GDCPZ" --platform_filter="((platform_name CONTAINS \"Windows 2008\")|(platform_name CONTAINS \"Windows 2003\")|(platform_name CONTAINS \"Windows 2012\"))" --analyze_time="2014-08-29T01:44:15" --dry_run=1 --chunk 22 --reboot=1 --pre_script=3620001 --post_script=3630001
+```
+
+Sample output (Dry Run Only):
+
+```
+(<GDCPZSCAFSAT (FacilityRef:120001) instance at 0x3971548>,)
+(<Windows Server 2012 R2 x64 (PlatformRef:95000) instance at 0x3971f48>, <Windows Server 2008 (PlatformRef:160076) instance at 0x3971e88>, <Windows Server 2003 x64 (PlatformRef:60100) instance at 0x3971f08>, <Windows Server 2012 x64 (PlatformRef:170099) instance at 0x3971f88>, <Windows Server 2003 (PlatformRef:10007) instance at 0x3971fc8>, <Windows Server 2008 R2 x64 (PlatformRef:170092) instance at 0x3979048>, <Windows Server 2008 x64 (PlatformRef:170076) instance at 0x39790c8>, <Windows Server 2008 R2 IA64 (PlatformRef:100200) instance at 0x3979108>)
+MAP Result: 0 results for: ((device_group_id EQUAL_TO 97960001))&(device_facility_id EQUAL_TO 120001)&(device_platform_id EQUAL_TO 95000)
+MAP Result: 7 results for: ((device_group_id EQUAL_TO 97960001))&(device_facility_id EQUAL_TO 120001)&(device_platform_id EQUAL_TO 160076)
+MAP Result: 2 results for: ((device_group_id EQUAL_TO 97960001))&(device_facility_id EQUAL_TO 120001)&(device_platform_id EQUAL_TO 60100)
+MAP Result: 0 results for: ((device_group_id EQUAL_TO 97960001))&(device_facility_id EQUAL_TO 120001)&(device_platform_id EQUAL_TO 170099)
+MAP Result: 11 results for: ((device_group_id EQUAL_TO 97960001))&(device_facility_id EQUAL_TO 120001)&(device_platform_id EQUAL_TO 10007)
+MAP Result: 199 results for: ((device_group_id EQUAL_TO 97960001))&(device_facility_id EQUAL_TO 120001)&(device_platform_id EQUAL_TO 170092)
+MAP Result: 3 results for: ((device_group_id EQUAL_TO 97960001))&(device_facility_id EQUAL_TO 120001)&(device_platform_id EQUAL_TO 170076)
+MAP Result: 0 results for: ((device_group_id EQUAL_TO 97960001))&(device_facility_id EQUAL_TO 120001)&(device_platform_id EQUAL_TO 100200)
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008-CHUNK#0-COUNT7,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T01:44:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2003 x64-CHUNK#0-COUNT2,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T01:49:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2003-CHUNK#0-COUNT11,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T01:54:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008 R2 x64-CHUNK#0-COUNT22,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T01:59:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008 R2 x64-CHUNK#1-COUNT22,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T02:04:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008 R2 x64-CHUNK#2-COUNT22,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T02:09:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008 R2 x64-CHUNK#3-COUNT22,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T02:14:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008 R2 x64-CHUNK#4-COUNT22,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T02:19:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008 R2 x64-CHUNK#5-COUNT22,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T02:24:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008 R2 x64-CHUNK#6-COUNT22,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T02:29:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008 R2 x64-CHUNK#7-COUNT22,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T02:34:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008 R2 x64-CHUNK#8-COUNT22,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T02:39:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008 R2 x64-CHUNK#9-COUNT1,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T02:44:15,JOB_REF:DRY_RUN
+REMEDIATE-PY-GDCPZSCAFSAT-Windows Server 2008 x64-CHUNK#0-COUNT3,PATCH_POLICIES: 13,SW_POLICIES: 1,REBOOT:at_end:WindowsPatchXOR,ANAL_START: 2014-08-29T02:49:15,JOB_REF:DRY_RUN
 ```
 
 ## Running in Production

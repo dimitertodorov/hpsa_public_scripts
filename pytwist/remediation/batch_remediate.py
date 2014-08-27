@@ -2,28 +2,10 @@
 # ex: set tabstop=4 :
 # Please do not change the two lines above. See PEP 8, PEP 263.
 """
-The MIT License (MIT)
 
-Copyright (c) 2014 Dimiter Todorov
+Dimiter Todorov - 2014
 dimiter.todorov@gmail.com
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
 """
 
 import os
@@ -69,13 +51,15 @@ def get_normal_date_time(in_long_time):
 # Main Script
 if (__name__ == '__main__'):
     parser = OptionParser(description=__doc__, version="1.0.0",
-                          usage='python %prog [-f "Server Filter" -r "Policy IDs" -e email] Optional: [-u username -p password]')
+                          usage='python %prog options')
     parser.add_option("-u", "--user", action="store", dest="username", metavar="username", default="",
                       help="(Optional) User Name Only required if running outside of OGSH context.")
     parser.add_option("-p", "--password", action="store", dest="password", metavar="password", default="",
                       help="(Optional) Password. Only required if running outside of OGSH context.")
     parser.add_option("-e", "--email", action="store", dest="email", metavar="email", default="",
                       help="(Required) E-Mail")
+    parser.add_option("--reboot", action="store", dest="reboot", metavar="reboot", default=None,
+                      help="(Optional) Set to 1 if you want to reboot at the end of remediation.")
     parser.add_option("--server_filter", action="store", dest="server_filter", metavar="server_filter", default="",
                       help="(Required) Servers which to Remediate")
     parser.add_option("--facility_filter", action="store", dest="facility_filter", metavar="facility_filter",
@@ -100,6 +84,10 @@ if (__name__ == '__main__'):
                       help="(Optional) Time for the last job to start in minutes after action time. (e.g. 240=4hours) If left blank, action stage will be separated by 5 minutes")
     parser.add_option("--chunk", action="store", dest="chunk", metavar="chunk", default=50,
                       help="(Optional) Maximum number of servers per job. Default: 50")
+    parser.add_option("--pre_script", action="store", dest="pre_script", metavar="pre_script", default=None,
+                      help="(Optional) Long ID of Script to run before action stage.")
+    parser.add_option("--post_script", action="store", dest="post_script", metavar="post_script", default=None,
+                      help="(Optional) Long ID of Script to run after action stage.")
     parser.add_option("--dry_run", action="store", dest="dry_run", metavar="dry_run", default=0,
                       help="(Optional) Specify 1 here to skip remediation. Only print what would be done.")
 
@@ -132,8 +120,7 @@ if (__name__ == '__main__'):
     chunk = int(opts.chunk)
 
     #Map Servers according to Facility and Platform
-    mapped_servers = sa_utilities.map_by_platform_facility(opts.facility_filter, opts.platform_filter,
-                                                           opts.server_filter, chunk)
+    mapped_servers = sa_utilities.map_by_platform_facility(opts.facility_filter, opts.platform_filter,opts.server_filter, chunk)
     batch_count = len(mapped_servers)
 
     current_time = long(time.time())
@@ -143,7 +130,7 @@ if (__name__ == '__main__'):
     if (opts.analyze_time):
         analyze_time = get_long_time(opts.analyze_time)
     else:
-        analyze_time = long(time.time()) + 300
+        analyze_time = long(current_time) + 300
 
     if opts.analyze_spread:
         analyze_minutes_spread = int(math.floor(int(opts.analyze_spread) / batch_count))
@@ -174,40 +161,54 @@ if (__name__ == '__main__'):
         #print "Returned policies: %s" % policies
         filtered_resources = sa_utilities.filter_servers_and_policies(batch_group['target_servers'], policies)
         if filtered_resources['patch'] or filtered_resources['sw']:
-            ticket_string = "REMEDIATE-PY-%s-%s-CHUNK#-%s" % (
-            batch_group['facility'].name, batch_group['platform'].name, batch_group['chunk'])
-            print ticket_string
+            ticket_string = "REMEDIATE-PY-%s-%s-CHUNK#%s-COUNT%s" % (
+            batch_group['facility'].name, batch_group['platform'].name, batch_group['chunk'], len(filtered_resources['servers']))
+            log_string=ticket_string
             policy_map = []
             if filtered_resources['patch']:
                 pam = PolicyAttachableMap()
                 pam.setPolicies(filtered_resources['patch'])
                 pam.setPolicyAttachables(filtered_resources['servers'])
                 pam.setAttached(1)
-                print "Adding Patch Policies to Map: %s" % len(filtered_resources['patch'])
+                log_string += ",PATCH_POLICIES: %s" % len(filtered_resources['patch'])
                 policy_map.append(pam)
             if filtered_resources['sw']:
                 sam = PolicyAttachableMap()
                 sam.setPolicies(filtered_resources['sw'])
                 sam.setPolicyAttachables(filtered_resources['servers'])
                 sam.setAttached(1)
-                print "Adding SW Policies to Map: %s" % len(filtered_resources['sw'])
+                log_string += ",SW_POLICIES: %s" % len(filtered_resources['sw'])
                 policy_map.append(sam)
 
             param_set = RemediateGlobalParamSet()
-            param_set.setRebootOption('suppress')
+            if opts.reboot=="1":
+                param_set.setRebootOption('at_end:WindowsPatchXOR')
+                log_string += ',REBOOT:at_end:WindowsPatchXOR'
+            else:
+                param_set.setRebootOption('suppress')
+                log_string += ',REBOOT:suppress'
+
             param_set.setContinueOnFailure(1)
 
             analyze_argument = AnalyzeArgument()
             if analyze_time:
-                print "Starting ANALYZE at: %s" % get_normal_date_time(analyze_time)
+                log_string += ",ANAL_START: %s" % get_normal_date_time(analyze_time)
                 analyze_argument.setScheduleDate(analyze_time)
                 analyze_time = analyze_time + analyze_seconds_spread
 
             stage_argument = StageArgument()
 
             action_argument = ActionArgument()
+
+            if opts.pre_script:
+                pre_script=sa_utilities.get_remediate_script_param_set(long(opts.pre_script))
+                action_argument.setPreScriptArguments(pre_script)
+            if opts.post_script:
+                post_script=sa_utilities.get_remediate_script_param_set(long(opts.post_script))
+                action_argument.setPostScriptArguments(post_script)
+
             if action_time:
-                print "Starting ACTION at: %s" % get_normal_date_time(action_time)
+                log_string += ",ACT_START: %s" % get_normal_date_time(action_time)
                 action_argument.setScheduleDate(action_time)
                 action_time = action_time + action_seconds_spread
 
@@ -226,11 +227,14 @@ if (__name__ == '__main__'):
             prja.setTicketId(ticket_string)
             prja.setNotificationSpec(sa_utilities.default_notify(opts.email))
 
-            print prja
-
             if opts.dry_run == 0:
                 job_ref = swps.startRemediate(prja)
-                print "Started: %s" % job_ref
+                log_string+= ",JOB_REF:" % job_ref
+            else:
+                log_string+= ",JOB_REF:DRY_RUN"
+
+            print log_string
+
 
 
 

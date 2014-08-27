@@ -11,6 +11,8 @@ from pytwist import *
 from pytwist.com.opsware.search import Filter
 from pytwist.com.opsware.fido import OperationConstants
 from pytwist.com.opsware.job import JobNotification
+from pytwist.com.opsware.swmgmt import RemediateScriptParamSet
+from pytwist.com.opsware.script import ServerScriptRef
 
 
 def map_by_platform_facility(facility_filter, platform_filter, server_filter, chunk=50):
@@ -35,7 +37,7 @@ def map_by_platform_facility(facility_filter, platform_filter, server_filter, ch
             server_filter, facility.id, platform.id)
             servers = ts.server.ServerService.findServerRefs(combined_filter)
             i = 0
-            print '%s results for: %s' % (len(servers), combined_filter.expression)
+            print 'MAP Result: %s results for: %s' % (len(servers), combined_filter.expression)
             if len(servers) > 0:
                 for batch_iter in batch(servers, chunk):
                     result_dict = {}
@@ -96,13 +98,17 @@ def filter_servers_and_policies(servers, policies):
         filtered_result['patch'] = filtered_patch_policies
     return filtered_result
 
-
-def batch(iterable, size):
-    sourceiter = iter(iterable)
-    while True:
-        batchiter = islice(sourceiter, size)
-        yield chain([batchiter.next()], batchiter)
-
+def get_remediate_script_param_set(script_ref_id,timeout=360):
+    script_ref=ServerScriptRef(script_ref_id)
+    script_vo=ts.script.ServerScriptService.getServerScriptVO(script_ref)
+    rsps=RemediateScriptParamSet()
+    rsps.setScriptRef(script_ref_id)
+    rsps.setWaitTime(timeout)
+    rsps.setStdoutByteSize(10240)
+    rsps.setScriptCodeType(script_vo.codeType)
+    rsps.setDeviceUserName(RemediateScriptParamSet.WINDOWS_SUPERUSER)
+    rsps.setEndSubsequent(0)
+    return rsps
 
 def default_notify(email):
     jobNotify = JobNotification()
@@ -112,5 +118,11 @@ def default_notify(email):
     jobNotify.onSuccessRecipients = [email]
     jobNotify.onCancelRecipients = [email]
     return jobNotify
+
+def batch(iterable, size):
+    sourceiter = iter(iterable)
+    while True:
+        batchiter = islice(sourceiter, size)
+        yield chain([batchiter.next()], batchiter)
 
 
