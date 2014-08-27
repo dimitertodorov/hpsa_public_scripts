@@ -38,6 +38,7 @@ Authentication while running these scripts is done one of the following ways.
 * Specify as options to the program. Using -u and -p
 * Use the environment variables **SA_USER** and **SA_PWD**
 * Inherit permissions from the Global Shell under which the user is running. 
+* Inherit the permissions of the Server from which it is running. This usually means you can only edit the server itself.
 
 Most scripts here use the following code to perform the authentication.
 ```python
