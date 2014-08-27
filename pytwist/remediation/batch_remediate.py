@@ -128,10 +128,11 @@ if (__name__ == '__main__'):
 
 
     chunk=int(opts.chunk)
+
     #Map Servers according to Facility and Platform
     mapped_servers=sa_utilities.map_by_platform_facility(opts.facility_filter,opts.platform_filter,opts.server_filter,chunk)
     batch_count=len(mapped_servers)
-    #Parse input time and current time. #TODO: Make sure there is sufficient gap between steps.
+
     current_time=long(time.time())
     analyze_time=None
     action_time=None
@@ -156,6 +157,7 @@ if (__name__ == '__main__'):
     else:
         action_seconds_spread=default_seconds_spread
 
+    #If an action time is specified, ensure that the first action starts at least 5 minutes after last analyze job starts.
     if action_time:
         last_analyze_job=analyze_time+analyze_seconds_spread*batch_count
         print get_normal_date_time(last_analyze_job)
