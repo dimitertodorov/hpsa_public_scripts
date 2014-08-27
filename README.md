@@ -3,7 +3,7 @@ ITS - Public HPSA Scripts
 
 A collection of some scripts I have made for HPSA (HP Server Automation)
 
-##Development and Testing
+## Development and Testing
 Most of my development is done on a Windows server that is running the HPSA agent.
 
 In order to execute the scripts, you need to setup the following environment to bring the python binary into your path.
@@ -16,7 +16,7 @@ set PYTHONPATH=%SystemDrive%\Program Files\Opsware\agent\pylibs
 
 ---
 
-###Authentication
+### Authentication
 Authentication while running these scripts is done one of the following ways.
 * Specify as options to the program. Using -u and -p
 * Use the environment variables **SA_USER** and **SA_PWD**
