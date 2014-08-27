@@ -2,43 +2,14 @@
 # ex: set tabstop=4 :
 # Please do not change the two lines above. See PEP 8, PEP 263.
 """
-The MIT License (MIT)
-
-Copyright (c) 2014 Dimiter Todorov
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
-Script Details:
-Run a server script from pytwist. Can either run on a server with the agent. Or from the Global Shell
-If running from a server with an agent, username/password is required.
-usage: python run_script_from_csv.py [--file "CSV filename" -s script_id -e email] Optional: [-u username -p password]
-The file should be a list of hostnames on which to run the script. The first line should be 'hostname' as a headers
+Dimiter Todorov - 2014
+SA Utilities for Remediation
 """
 from itertools import islice, chain
 
 from pytwist import *
 from pytwist.com.opsware.search import Filter
 from pytwist.com.opsware.fido import OperationConstants
-from pytwist.com.opsware.device import DeviceGroupRef
-from pytwist.com.opsware.job import JobRef,JobNotification,JobSchedule,JobInfoVO
-from pytwist.com.opsware.script import ServerScriptRef, ServerScriptJobArgs
-from pytwist.com.opsware.server import ServerRef, ServerVO
 
 
 def map_by_platform_facility(facility_filter, platform_filter, server_filter, chunk=50):
