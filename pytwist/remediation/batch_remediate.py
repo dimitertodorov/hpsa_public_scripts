@@ -143,7 +143,7 @@ if (__name__ == '__main__'):
     if (opts.analyze_time):
         analyze_time = get_long_time(opts.analyze_time)
     else:
-        analyze_time = long(time.time()) + 200
+        analyze_time = long(time.time()) + 300
 
     if opts.analyze_spread:
         analyze_minutes_spread = int(math.floor(int(opts.analyze_spread) / batch_count))

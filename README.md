@@ -52,6 +52,66 @@ else:
 
 ---
 
+## Remediation Script Usage
+FYI. This one is very complex.Consult the code, do not use without understanding the code.
+
+**NOTE: ALL DATE/TIMES are expected in UTC**
+```
+options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -u username, --user=username
+                        (Optional) User Name Only required if running outside
+                        of OGSH context.
+  -p password, --password=password
+                        (Optional) Password. Only required if running outside
+                        of OGSH context.
+  -e email, --email=email
+                        (Required) E-Mail
+  --server_filter=server_filter
+                        (Required) Servers which to Remediate
+  --facility_filter=facility_filter
+                        (Required) Facilities which to Remediate
+  --platform_filter=platform_filter
+                        (Required) Platforms which to Remediate
+  --sw_policy_filter=sw_policy_filter
+                        (Optional) SW Policies Filter to Remediate
+  --patch_policy_filter=patch_policy_filter
+                        (Optional) Patch Policies Filter to Remediate
+  --analyze_time=analyze_time
+                        (Optional) Time to start Analyze. Staging follows.
+                        Format: '%Y-%m-%dT%H:%M:%S' e.g. 2014-08-29T20:15:15
+  --analyze_spread=analyze_spread
+                        (Optional) Time for the last job to start in minutes
+                        after analyze time. (e.g. 240=4hours) If left blank,
+                        analyze stage will be separated by 5 minutes
+  --action_time=action_time
+                        (Optional) Time to start actual Remediation. Format:
+                        '%Y-%m-%dT%H:%M:%S'
+  --action_spread=action_spread
+                        (Optional) Time for the last job to start in minutes
+                        after action time. (e.g. 240=4hours) If left blank,
+                        action stage will be separated by 5 minutes
+  --chunk=chunk         (Optional) Maximum number of servers per job. Default:
+                        50
+  --dry_run=dry_run     (Optional) Specify 1 here to skip remediation. Only
+                        print what would be done.
+```
+
+Example:
+The following will do the following:
+
+* Find all Servers in Device Group 97960001
+* Filter and group by Facility containing 'GDCPZ' and Platform Containing 'Windows 2008' or 'Windows 2003'
+* Find all patch policies containg the name 'Security'
+* Find all software policies with primary keys matching 420001 940001
+* Chunk Jobs out into sizes of no more than 22
+* Analyze will start after 5 minutes (Default)
+* Action Time will start at the defined action time.
+```
+python batch_remediate.py --server_filter="(device_group_id EQUAL_TO 97960001)" --patch_policy_filter="(PatchPolicyVO.name CONTAINS Security)" --sw_policy_filter="(SoftwarePolicyVO.pK IN 420001 940001)" --facility_filter="FacilityVO.name CONTAINS GDCPZ" --platform_filter="((platform_name CONTAINS \"Windows 2008\")|(platform_name CONTAINS \"Windows 2003\"))" --action_time="2014-08-27T01:44:15" --dry_run=1 --chunk 22
+```
+
 ## Running in Production
 Most scripts are light-weight and can be run either from a SA-Managed Server or from the Global Shell. (Check the User Guide for details on the Global Shell)
 
