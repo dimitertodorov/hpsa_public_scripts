@@ -57,10 +57,14 @@ try:
 except getopt.GetoptError:
     parser.print_help()
     sys.exit(2)
+
 if opts.username and opts.password:
     ts.authenticate(opts.username,opts.password)
+elif os.environ.has_key('SA_USER') and os.environ.has_key('SA_PWD'):
+    ts.authenticate(os.environ['SA_USER'],os.environ['SA_PWD'])
 else:
-    print "Username and Password not provided. Script may fail unless running in OGSH. \nSpecify with -u username -p password"
+    print "Username and Password not provided. Script may fail unless running in OGSH. \n Specify with -u username -p password"
+
 
 try:
     server_service=ts.server.ServerService
