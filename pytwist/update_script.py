@@ -5,6 +5,8 @@
 Dimiter Todorov - 2014
 
 Takes content of a file, and sets it as a script's current source.
+Usage example:
+python update_script.py -s 57040001 -f M:\HPSA\testscript.bat
 """
 
 #Import some basic python modules
