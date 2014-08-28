@@ -17,12 +17,13 @@ set PYTHONPATH=%SystemDrive%\Program Files\Opsware\agent\pylibs
 ```
 
 #### Unix
+```
 PYTHONPATH=/opt/opsware/agent/pylibs
 export PYTHONPATH
 PATH=/opt/opsware/agent/bin:${PATH}
 export PATH
 SRC=/opt/opsware/agent/pylibs/coglib
-
+```
 
 ### Important Python Note
 Python is a white-space sensitive language.
