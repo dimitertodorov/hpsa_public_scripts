@@ -3,7 +3,7 @@
 # Please do not change the two lines above. See PEP 8, PEP 263.
 """
 Dimiter Todorov - 2014
-
+Sets folder permissions to read/execute recursively. Currently uses a hard-coded UserGroup Filter
 """
 
 #Import some basic python modules
@@ -39,14 +39,14 @@ from pytwist.com.opsware.folder import *
 #INITIALIZE Twist and Options
 ts = twistserver.TwistServer()
 parser = OptionParser(description=__doc__, version="0.0.1",
-                      usage='python %prog [-f folderID] Optional: [-u username -p password]')
+                      usage='python %prog options')
 
 parser.add_option("-u", "--user", action="store", dest="username", metavar="username", default="",
                   help="User Name")
 parser.add_option("-p", "--password", action="store", dest="password", metavar="password", default="",
                   help="Password")
 parser.add_option("-f", "--folder", action="store", dest="folder", metavar="folder", default="",
-                  help="Folder")
+                  help="Folder ID")
 
 
 try:
@@ -82,7 +82,7 @@ except:
 if (__name__ == '__main__'):
     target_folder=FolderRef(long(opts.folder))
     role_filter=Filter()
-    role_filter.expression='UserRoleVO.roleName CONTAINS PATCH_ADMIN'
+    role_filter.expression='UserRoleVO.roleName CONTAINS REGIONAL'
     role_filter.objectType='user_role'
     roles=user_role_service.findUserRoleRefs(role_filter)
 

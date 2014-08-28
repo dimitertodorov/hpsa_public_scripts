@@ -65,6 +65,7 @@ def get_policies(platform, sw_policy_filter=None, patch_policy_filter=None):
         swpf.expression = "(software_policy_platform_id EQUAL_TO %s) & (%s)" % (platform.id, sw_policy_filter)
         swpf.objectType = 'software_policy'
         sw_policies = swps.findSoftwarePolicyRefs(swpf)
+        print sw_policies
         if len(sw_policies) > 0:
             policies['sw'] = sw_policies
     if patch_policy_filter:
@@ -86,6 +87,7 @@ def filter_servers_and_policies(servers, policies):
     filtered_servers = auth_service.filterSingleTypeResourceList(OperationConstants.REMEDIATE_SOFTWARE_POLICY, servers)
     filtered_servers = auth_service.filterSingleTypeResourceList(OperationConstants.INSTALL_PATCH_POLICY,
                                                                  filtered_servers)
+    print filtered_servers
     if len(filtered_servers) > 0:
         filtered_result['servers'] = filtered_servers
     if policies['sw']:
