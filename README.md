@@ -9,11 +9,20 @@ I use [Sublime Text](http://www.sublimetext.com/) to work on my code.
 
 In order to execute the scripts, you need to setup the following environment to bring the SA python binary into your path.
 
+#### Windows
 ```
 setlocal
 set PATH=%SystemDrive%\Program Files\Opsware\agent\lcpython15;%SystemDrive%\Program Files\Opsware\agent\bin;%PATH%
 set PYTHONPATH=%SystemDrive%\Program Files\Opsware\agent\pylibs
 ```
+
+#### Unix
+PYTHONPATH=/opt/opsware/agent/pylibs
+export PYTHONPATH
+PATH=/opt/opsware/agent/bin:${PATH}
+export PATH
+SRC=/opt/opsware/agent/pylibs/coglib
+
 
 ### Important Python Note
 Python is a white-space sensitive language.
