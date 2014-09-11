@@ -48,6 +48,7 @@ def get_normal_date_time(in_long_time):
     return time.strftime('%Y-%m-%dT%H:%M:%S', parsed_time)
 
 
+
 # Main Script
 if (__name__ == '__main__'):
     parser = OptionParser(description=__doc__, version="1.0.0",
@@ -90,7 +91,8 @@ if (__name__ == '__main__'):
                       help="(Optional) Long ID of Script to run after action stage.")
     parser.add_option("--dry_run", action="store", dest="dry_run", metavar="dry_run", default=0,
                       help="(Optional) Specify 1 here to skip remediation. Only print what would be done.")
-
+    parser.add_option("--verbose", action="store", dest="verbose", metavar="verbose", default=None,
+                      help="(Optional) Specify 1 here to print out additional output.")
     try:
         (opts, args) = parser.parse_args(sys.argv[1:])
     except getopt.GetoptError:
@@ -158,7 +160,8 @@ if (__name__ == '__main__'):
 
     for batch_group in mapped_servers:
         policies = sa_utilities.get_policies(batch_group['platform'], opts.sw_policy_filter, opts.patch_policy_filter)
-        #print "Returned policies: %s" % policies
+        if opts.verbose:
+            print "Returned policies: %s" % policies
         filtered_resources = sa_utilities.filter_servers_and_policies(batch_group['target_servers'], policies)
         if filtered_resources['patch'] or filtered_resources['sw']:
             ticket_string = "REMEDIATE-PY-%s-%s-CHUNK#%s-COUNT%s" % (
