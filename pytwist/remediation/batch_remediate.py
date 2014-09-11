@@ -160,7 +160,7 @@ if (__name__ == '__main__'):
 
     for batch_group in mapped_servers:
         policies = sa_utilities.get_policies(batch_group['platform'], opts.sw_policy_filter, opts.patch_policy_filter)
-        if opts.verbose:
+        if opts.verbose==1:
             print "Returned policies: %s" % policies
         filtered_resources = sa_utilities.filter_servers_and_policies(batch_group['target_servers'], policies)
         if filtered_resources['patch'] or filtered_resources['sw']:
