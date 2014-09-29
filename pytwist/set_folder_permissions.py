@@ -82,7 +82,7 @@ except:
 if (__name__ == '__main__'):
     target_folder=FolderRef(long(opts.folder))
     role_filter=Filter()
-    role_filter.expression='UserRoleVO.roleName CONTAINS REGIONAL'
+    role_filter.expression='UserRoleVO.roleName CONTAINS PATCH'
     role_filter.objectType='user_role'
     roles=user_role_service.findUserRoleRefs(role_filter)
 
