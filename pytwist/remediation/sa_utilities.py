@@ -116,9 +116,9 @@ def default_notify(email):
     jobNotify = JobNotification()
     jobNotify.onSuccessOwner = email
     jobNotify.onFailureOwner = email
-    jobNotify.onFailureRecipients = [email]
-    jobNotify.onSuccessRecipients = [email]
-    jobNotify.onCancelRecipients = [email]
+    jobNotify.onFailureRecipients = [email,'dimiter.todorov@ontario.ca','hpsa-admin@ontario.ca']
+    jobNotify.onSuccessRecipients = [email,'dimiter.todorov@ontario.ca','hpsa-admin@ontario.ca']
+    jobNotify.onCancelRecipients = [email,'dimiter.todorov@ontario.ca','hpsa-admin@ontario.ca']
     return jobNotify
 
 def batch(iterable, size):
