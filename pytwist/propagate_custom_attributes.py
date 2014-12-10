@@ -63,33 +63,40 @@ from pytwist.com.opsware.script import ServerScriptRef, ServerScriptJobArgs
 #Initialize the twist
 ts = twistserver.TwistServer()
 
-def batch(iterable, size):
-    sourceiter = iter(iterable)
-    while True:
-        batchiter = islice(sourceiter, size)
-        yield chain([batchiter.next()], batchiter)
+def propagate_attributes(device_group,attributes):
+    #Get CustAttrs for current group
+    custom_attributes=device_group_service.getCustAttrs(device_group,'DEFAULT',"ITS.*",False)
+    print "Name: %s, Atts: %s" % (device_group,custom_attributes)
+    #Add and/or overwrite custom attributes
+    for cust_attr in custom_attributes:
+        if custom_attributes[cust_attr]:
+            attributes[cust_attr]=custom_attributes[cust_attr]
+    #Set the attributes.
+    device_group_service.setCustAttrs(device_group,attributes)
 
+    #Call the same function on all children if there are any.
+    children=device_group_service.getChildren(device_group)
+    for child in children:
+        propagate_attributes(child,attributes)
 
 # Main Script
 if (__name__ == '__main__'):
     parser = OptionParser(description=__doc__, version="0.0.1",
                           usage=' Optional: [-u username -p password]')
-    parser.add_option("-f", "--filter", action="store", dest="filter", metavar="filter", default="(ServerVO.hostName CONTAINS CTSPIKDCEMMON)",
-                      help="Filter")
+    parser.add_option("-g", "--filter", action="store", dest="device_group", metavar="device_group", default=0,
+                      help="device_group id")
     parser.add_option("-u", "--user", action="store", dest="username", metavar="username", default="",
                       help="User Name")
     parser.add_option("-p", "--password", action="store", dest="password", metavar="password", default="",
                       help="Password")
-    parser.add_option("-b", "--batch_size", action="store", dest="batch_size", metavar="batch_size", default=25,
-                      help="Batch Size")
     parser.add_option("-d", "--debug", action="store", dest="debug", metavar="debug", default=0,
                       help="Debug?")
 
 
     try:
         (opts, args) = parser.parse_args(sys.argv[1:])
-        if not opts.filter:
-            parser.error("Filter")
+        if not opts.device_group:
+            parser.error("device_group ID missing")
     except getopt.GetoptError:
         parser.print_help()
         sys.exit(2)
@@ -110,27 +117,14 @@ if (__name__ == '__main__'):
         print "Error initializing services to HPSA"
         sys.exit(2)
 
-    platform_filter="device_platform_name CONTAINS Win"
+    #Get the parent group.
+    parent_group=DeviceGroupRef(opts.device_group)
+    parent_attributes=device_group_service.getCustAttrs(parent_group,'DEFAULT',"ITS.*",False)
+    children=device_group_service.getChildren(parent_group)
+    for child in children:
+        propagate_attributes(child,parent_attributes)
 
 
-    server_filter = Filter()
-    print opts.filter
-    server_filter.expression="(%s)&(%s)" % (opts.filter,platform_filter)
-    print server_filter.expression
-    server_refs=server_service.findServerRefs(server_filter)
-
-    for batch_iter in batch(server_refs,int(opts.batch_size)):
-
-        server_array=[]
-        for srv in batch_iter:
-            server_array.append(srv)
-        filtered_refs=auth_service.filterSingleTypeResourceList(OperationConstants.WRITE_DEVICE, server_array)
-        if int(opts.debug)!=1:
-            job_ref=server_service.startScanPatchPolicyCompliance(filtered_refs)
-            print job_ref
-            print filtered_refs
-        else:
-            print filtered_refs
 
 
 
