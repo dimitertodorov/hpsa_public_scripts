@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- mode: Python; tab-width: 4; indent-tabs-mode: nil; -*-
 # ex: set tabstop=4 :
 # Please do not change the two lines above. See PEP 8, PEP 263.
@@ -26,10 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 Script Details:
-Propagate Custom Attributes From a base static device group to all children until reaching:
-A dynamic group.
-A static group with no device group children.
-
+Run a server script from pytwist. Can either run on a server with the agent. Or from the Global Shell
 """
 
 #Import some basic python modules
@@ -37,7 +33,6 @@ import os
 import sys
 import getopt
 from itertools import islice, chain
-
 import time
 
 #Import the OptionParser to allow for CLI options
@@ -64,44 +59,31 @@ from pytwist.com.opsware.script import ServerScriptRef, ServerScriptJobArgs
 #Initialize the twist
 ts = twistserver.TwistServer()
 
-def propagate_attributes(device_group,attributes):
-    #Get CustAttrs for current group
-    custom_attributes=device_group_service.getCustAttrs(device_group,'DEFAULT',"ITS.*",False)
-    print "Name: %s, Atts: %s" % (device_group,custom_attributes)
-    #Add and/or overwrite custom attributes
-    for cust_attr in custom_attributes:
-        if custom_attributes[cust_attr]:
-            attributes[cust_attr]=custom_attributes[cust_attr]
-    #Set the attributes.
-    device_group_service.setCustAttrs(device_group,attributes)
-
-    #Call the same function on all children if there are any.
-    children=device_group_service.getChildren(device_group)
-    for child in children:
-        propagate_attributes(child,attributes)
 
 # Main Script
 if (__name__ == '__main__'):
     parser = OptionParser(description=__doc__, version="0.0.1",
-                          usage=' Optional: [-u username -p password]')
-    parser.add_option("-g", "--filter", action="store", dest="device_group", metavar="device_group", default=0,
-                      help="device_group id")
+                          usage='python %prog [--file "CSV filename" -s script_id -e email] Optional: [-u username -p password]')
+    parser.add_option("-f", "--filter", action="store", dest="filter", metavar="filter", default="(ServerVO.hostName CONTAINS ASOJIASOJIDSAOIAJSDA)",
+                      help="Filter")
     parser.add_option("-u", "--user", action="store", dest="username", metavar="username", default="",
                       help="User Name")
     parser.add_option("-p", "--password", action="store", dest="password", metavar="password", default="",
                       help="Password")
-    parser.add_option("-d", "--debug", action="store", dest="debug", metavar="debug", default=0,
-                      help="Debug?")
+    parser.add_option("-c", "--custattr", action="store", dest="custattr", metavar="custattr", default="ITS_TEST",
+                      help="CustomAttribute")
+
 
 
     try:
         (opts, args) = parser.parse_args(sys.argv[1:])
-        if not opts.device_group:
-            parser.error("device_group ID missing")
+        if not opts.custattr:
+            parser.error("custattr required")
+        if not opts.filter:
+            parser.error("Filter required")
     except getopt.GetoptError:
         parser.print_help()
         sys.exit(2)
-
     if opts.username and opts.password:
         ts.authenticate(opts.username,opts.password)
     elif os.environ.has_key('SA_USER') and os.environ.has_key('SA_PWD'):
@@ -118,14 +100,46 @@ if (__name__ == '__main__'):
         print "Error initializing services to HPSA"
         sys.exit(2)
 
-    #Get the parent group.
-    parent_group=DeviceGroupRef(opts.device_group)
-    parent_attributes=device_group_service.getCustAttrs(parent_group,'DEFAULT',"ITS.*",False)
-    children=device_group_service.getChildren(parent_group)
-    for child in children:
-        propagate_attributes(child,parent_attributes)
+
+    server_filter = Filter()
+    server_filter.expression="(%s)" % (opts.filter)
+    server_refs=server_service.findServerRefs(server_filter)
+    print "NAME,VALUE"
+    for server in server_refs:
+        ca_value=server_service.getCustAttr(server,opts.custattr,False)
+        print "%s,%s" % (server.name,ca_value)
 
 
+
+
+
+    current_time=long(time.time())
+    start_time=current_time+60
+
+    separate_seconds=int(opts.minutes)*60
+    for batch_iter in batch(server_refs,int(opts.batch_size)):
+        print start_time
+        server_array=[]
+        for srv in batch_iter:
+            server_array.append(srv)
+        filtered_refs=auth_service.filterSingleTypeResourceList(OperationConstants.EXECUTE_SERVER_SCRIPT, server_array)
+        js=JobSchedule()
+        js.setStartDate(start_time)
+        ssja=ServerScriptJobArgs()
+        ssja.targets=filtered_refs
+        ssja.timeOut=3600
+        if opts.args:
+            ssja.parameters=opts.args
+        if opts.runas_user and opts.runas_pwd and opts.runas_domain:
+            ssja.username=opts.runas_user
+            ssja.password=opts.runas_pwd
+            ssja.loginDomain=opts.runas_domain
+        if int(opts.debug)!=1:
+            job_ref=server_script_service.startServerScript(script_ref,ssja,'Script from pytwist',default_notify(opts.email),js)
+            print job_ref
+        else:
+            print filtered_refs
+        start_time=start_time+separate_seconds
 
 
 
