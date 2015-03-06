@@ -150,13 +150,10 @@ if (__name__ == '__main__'):
     server_refs=server_service.findServerRefs(server_filter)
 
 
-    print start_time
     server_array=[]
     for srv in server_refs:
         server_array.append(srv)
     filtered_refs=auth_service.filterSingleTypeResourceList(OperationConstants.EXECUTE_SERVER_SCRIPT, server_array)
-    js=JobSchedule()
-    js.setStartDate(start_time)
     ssja=ServerScriptJobArgs()
     ssja.targets=filtered_refs
     ssja.timeOut=3600
@@ -166,7 +163,6 @@ if (__name__ == '__main__'):
         ssja.username=opts.runas_user
         ssja.password=opts.runas_pwd
         ssja.loginDomain=opts.runas_domain
-    print opts.minutes
     if int(opts.debug)!=1:
         job_ref=server_script_service.startServerScript(script_ref,ssja,'Script from pytwist',default_notify(opts.email),None)
         print job_ref
