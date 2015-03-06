@@ -150,12 +150,6 @@ if (__name__ == '__main__'):
     server_refs=server_service.findServerRefs(server_filter)
 
 
-
-
-    current_time=long(time.time())
-    start_time=current_time+60
-
-
     print start_time
     server_array=[]
     for srv in server_refs:
@@ -174,10 +168,7 @@ if (__name__ == '__main__'):
         ssja.loginDomain=opts.runas_domain
     print opts.minutes
     if int(opts.debug)!=1:
-        if(int(opts.minutes)==0):
-            job_ref=server_script_service.startServerScript(script_ref,ssja,'Script from pytwist',default_notify(opts.email),None)
-        else:
-            job_ref=server_script_service.startServerScript(script_ref,ssja,'Script from pytwist',default_notify(opts.email),js)
+        job_ref=server_script_service.startServerScript(script_ref,ssja,'Script from pytwist',default_notify(opts.email),None)
         print job_ref
     else:
         print filtered_refs
