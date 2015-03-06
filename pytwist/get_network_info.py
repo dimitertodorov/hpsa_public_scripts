@@ -2,30 +2,7 @@
 # ex: set tabstop=4 :
 # Please do not change the two lines above. See PEP 8, PEP 263.
 """
-The MIT License (MIT)
-
-Copyright (c) 2014 Dimiter Todorov
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
-Script Details:
-Run a server script from pytwist. Can either run on a server with the agent. Or from the Global Shell
+Get NW Info
 """
 
 #Import some basic python modules
@@ -37,7 +14,7 @@ import time
 
 #Import the OptionParser to allow for CLI options
 from optparse import OptionParser
-
+import simplejson as json
 # HPSA - Depending on Windows/Unix select the directories containing the pytwist libraries.
 if (sys.platform == 'win32'):
     pytwist_dir = (os.environ['SystemDrive'] + '\\Program Files\\Opsware\\smopylibs2')
@@ -51,6 +28,8 @@ sys.path.append(pylibs_dir)
 sys.path.append(pytwist_dir)
 from pytwist import *
 from pytwist.com.opsware.search import Filter
+
+
 from pytwist.com.opsware.fido import OperationConstants
 from pytwist.com.opsware.device import DeviceGroupRef
 from pytwist.com.opsware.job import JobRef,JobNotification,JobSchedule,JobInfoVO
@@ -100,26 +79,27 @@ if (__name__ == '__main__'):
         print "Error initializing services to HPSA"
         sys.exit(2)
 
-
+    sh_info=[]
     server_filter = Filter()
     server_filter.expression="(%s)" % (opts.filter)
     server_refs=server_service.findServerRefs(server_filter)
-    print "NAME,PKG,CORE,LOGICAL"
-    for server in server_refs:
-        cpu_dict={}
-        try:
-            ca_value=server_service.getCustAttr(server,opts.custattr,False)
-            cinfo=ca_value.split(',')
-            cpu_dict['packages']=cinfo[0]
-            cpu_dict['cores']=cinfo[1]
-            cpu_dict['logical']=cinfo[2]
-        except:
-            ca_value=''
-            cpu_dict['packages']=''
-            cpu_dict['cores']=''
-            cpu_dict['logical']=''
+    shvos=server_service.getServerHardwareVOs(server_refs)
+    for sh in shvos:
+        server={}
+        server['name']=sh.ref.name
+        server['id']=sh.ref.id
+        server['interfaces']=[]
+        for intf in sh.interfaces:
+            interface={}
+            interface['ipAddress']=intf.ipAddress
 
-        print "%s,%s,%s,%s" % (server.name,cpu_dict['packages'],cpu_dict['cores'],cpu_dict['logical'])
+            interface['hardwareAddress']=intf.hardwareAddress
+            interface['netmask']=intf.netmask
+            interface['slot']=intf.slot
+            interface['enabled']=intf.enabled
+            server['interfaces'].append(interface)
+        sh_info.append(server)
+    print json.dumps(sh_info)
 
 
 
