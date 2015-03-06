@@ -176,6 +176,7 @@ if (__name__ == '__main__'):
             job_progress=job_service.getProgress(job_ref)
             if(job_progress):
                 sys.stdout.write('.')
+                time.sleep(4)
             else:
                 print "Finished"
                 job_result = job_service.getResult(job_ref)
