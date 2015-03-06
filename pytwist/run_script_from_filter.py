@@ -174,7 +174,7 @@ if (__name__ == '__main__'):
             ssja.password=opts.runas_pwd
             ssja.loginDomain=opts.runas_domain
         print opts.minutes
-		if int(opts.debug)!=1:
+        if int(opts.debug)!=1:
             if(int(opts.minutes)==0):
                 job_ref=server_script_service.startServerScript(script_ref,ssja,'Script from pytwist',default_notify(opts.email),None)
             else:
