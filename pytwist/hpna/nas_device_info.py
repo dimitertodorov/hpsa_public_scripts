@@ -62,9 +62,11 @@ if (__name__ == '__main__'):
     except:
         print "Error Parsing devices. Ensure they are in comma separated format"
 
-    out_dict=[]
+    
     count = 0
+    out_dict=[]
     for nas_device in device_names:
+        
         deviceFilter = Filter()
         deviceFilter.expression = "hostName = %s" % nas_device
 
@@ -145,30 +147,32 @@ if (__name__ == '__main__'):
             ntVORow["portName"]=npVO.portName
             ntVORow["portType"]=npVO.portType
             ntVORow["portStatus"]=npVO.portStatus
+            ntVORow["switchDevice"]=nas_device
 
             out_dict.append(ntVORow)
             print ntVORow
 
 
-        keys=['hostname',
-              'slot',
-              'description',
-              'ipAddress',
-              'netmask',
-              'hardwareAddress',
-              'configuredSpeed',
-              'portName',
-              'portType',
-              'portStatus',
-              'osVersion',
-              'associatedVlanId',
-              'negotiatedSpeed']
+    keys=['hostname',
+          'slot',
+          'description',
+          'ipAddress',
+          'netmask',
+          'hardwareAddress',
+          'configuredSpeed',
+          'portName',
+          'portType',
+          'portStatus',
+          'osVersion',
+          'associatedVlanId',
+          'negotiatedSpeed',
+          'switchDevice']
 
-        f=open("nw_info%s.csv" % nas_device,'wb')
-        dict_writer=csv.DictWriter(f,keys,quoting=csv.QUOTE_ALL)
+    f=open("nw_info_compiled.csv",'wb')
+    dict_writer=csv.DictWriter(f,keys,quoting=csv.QUOTE_ALL)
 
-        dict_writer.writer.writerow(keys)
-        dict_writer.writerows(out_dict)
+    dict_writer.writer.writerow(keys)
+    dict_writer.writerows(out_dict)
 
 
 

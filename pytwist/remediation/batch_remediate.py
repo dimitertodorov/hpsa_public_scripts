@@ -93,6 +93,8 @@ if (__name__ == '__main__'):
                       help="(Optional) Specify 1 here to skip remediation. Only print what would be done.")
     parser.add_option("--verbose", action="store", dest="verbose", metavar="verbose", default=None,
                       help="(Optional) Specify 1 here to print out additional output.")
+    parser.add_option("--notes", action="store", dest="notes", metavar="notes", default=None,
+                      help="(Optional) Specify Notes for the Job")
     try:
         (opts, args) = parser.parse_args(sys.argv[1:])
     except getopt.GetoptError:
@@ -164,8 +166,10 @@ if (__name__ == '__main__'):
             print "Returned policies: %s" % policies
         filtered_resources = sa_utilities.filter_servers_and_policies(batch_group['target_servers'], policies)
         if filtered_resources['patch'] or filtered_resources['sw']:
-            ticket_string = "REMEDIATE-PY-%s-%s-CHUNK#%s-COUNT%s" % (
-            batch_group['facility'].name, batch_group['platform'].name, batch_group['chunk'], len(filtered_resources['servers']))
+            if opts.notes:
+                ticket_string = "%s,REMEDIATE-PY-%s-%s-CHUNK#%s-COUNT%s" % (opts.notes,batch_group['facility'].name, batch_group['platform'].name, batch_group['chunk'], len(filtered_resources['servers']))
+            else:
+                ticket_string = "REMEDIATE-PY-%s-%s-CHUNK#%s-COUNT%s" % (batch_group['facility'].name, batch_group['platform'].name, batch_group['chunk'], len(filtered_resources['servers']))
             log_string=ticket_string
             policy_map = []
             if filtered_resources['patch']:
