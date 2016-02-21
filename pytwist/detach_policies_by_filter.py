@@ -43,7 +43,9 @@ if (__name__ == '__main__'):
     parser.add_option("-p", "--password", action="store", dest="password", metavar="password", default="",
                       help="Password")
     parser.add_option("-f", "--filter", action="store", dest="filter", metavar="filter", default=0,
-                      help="Policy ID")
+                      help="Policy Filter")
+    parser.add_option("-d", "--delete", action="store", dest="delete", metavar="delete", default=0,
+                      help="Policy Delete?")
 
     try:
         (opts, args) = parser.parse_args(sys.argv[1:])
@@ -82,6 +84,9 @@ if (__name__ == '__main__'):
         if (len(wppvo.associatedDeviceGroups)!=0):
             device_groups=wppvo.associatedDeviceGroups
             wpps.detachFromPolicies([policy],device_groups)
+        if(int(opts.delete) == 1):
+            print "Deleting %s" % wppvo.name
+            wpps.remove(policy)
 
 
 
