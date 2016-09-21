@@ -189,8 +189,8 @@ if (__name__ == '__main__'):
 
             param_set = RemediateGlobalParamSet()
             if opts.reboot=="1":
-                param_set.setRebootOption('at_end:WindowsPatchXOR')
-                log_string += ',REBOOT:at_end:WindowsPatchXOR'
+                param_set.setRebootOption('at_end')
+                log_string += ',REBOOT:at_end'
             else:
                 param_set.setRebootOption('suppress')
                 log_string += ',REBOOT:suppress'
