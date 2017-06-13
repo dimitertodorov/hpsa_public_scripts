@@ -10,6 +10,8 @@ import time
 import logging
 import csv
 
+from string import Template
+
 from optparse import OptionParser
 
 if (sys.platform == 'win32'):
@@ -98,7 +100,7 @@ def mapReportRow(patch):
         "patchName": patch.unitName,
         "patchHpsaId" : patch.ref.id,
         "fileName" : patch.fileName,
-        "patchStatus" : patch.fileName,
+        "patchStatus" : patch.patchStatus,
         "metadataSource" : patch.metadataSource,
         "unitType" : patch.unitType,
         "title": patch.title,
@@ -106,7 +108,7 @@ def mapReportRow(patch):
     return row
 
 
-def PrintReport(policyDict, policyName):
+def PrintReport(policyDict, file=None):
     keys = [
         "platformName",
         "platformId",
@@ -125,15 +127,20 @@ def PrintReport(policyDict, policyName):
         rowDefaults = {
             "platformName": platformName,
             "platformId": policyObject["platform"].id,
-            "policyName": policyName
+            "policyName": policyObject["policyName"]
         }
         for type in ["hotfix","update_rollup","service_pack"]:
-            print policyObject
             for patch in policyObject[type]:
                 row = rowDefaults.copy()
-                row.update(mapReportRow(patch))
-                rows.append(row)
-    dict_writer = csv.DictWriter(sys.stdout, keys, quoting=csv.QUOTE_ALL)
+                patchRow = mapReportRow(patch)
+                if patchRow:
+                    row.update(patchRow)
+                    rows.append(row)
+    if file:
+        f=open(file,'wb')
+        dict_writer=csv.DictWriter(f,keys,quoting=csv.QUOTE_ALL)
+    else:
+        dict_writer = csv.DictWriter(sys.stdout, keys, quoting=csv.QUOTE_ALL)
     dict_writer.writer.writerow(keys)
     dict_writer.writerows(rows)
 
@@ -149,24 +156,29 @@ if (__name__ == '__main__'):
                       help="User Name")
     parser.add_option("-p", "--password", action="store", dest="password", metavar="password", default=None,
                       help="Password")
-    parser.add_option("-f", "--filter", action="store", dest="filter", metavar="filter",
-                      default="PatchPolicyVO.name CONTAINS 2016",
-                      help="Policy Filter")
+    parser.add_option("", "--policy_name", action="store", dest="policy_name", metavar="policy_name",
+                      default=None,
+                      help="Policy Name. Example \"OS Security Updates - July 2017 - $platformName\"")
     parser.add_option("", "--platform_filter", action="store", dest="platform_filter", metavar="platform_filter",
-                      default="platform_name CONTAINS 2012",
+                      default=None,
                       help="Filter PlatformRefs e.g. \"platform_name CONTAINS 2012\"")
     parser.add_option("", "--begin_date", action="store", dest="begin_date", metavar="begin_date",
-                      default="20170610.103212",
+                      default=None,
                       help="Date Filter - e.g. 20170501.103212")
-    parser.add_option("", "--end_date", action="store", dest="end_date", metavar="end_date", default="20170719.103212",
-                      help="Date Filter - e.g. 20170611.103212")
+    parser.add_option("", "--end_date", action="store", dest="end_date", metavar="end_date",
+                      default=None,
+                      help="Date Filter - e.g. 20220611.103212")
     parser.add_option("", "--whitelist", action="store", dest="whitelist", metavar="whitelist",
                       default=None,
                       help="Optional comma-separated Whitelist to allow only specific KBs. Numbers Only. Default: Allow All. \n Example \"4022717,4022722,4019111\"")
     parser.add_option("", "--report", action="store_true", dest="report", metavar="report", default=False,
                       help="Instead of creating policies, report what would be done in CSV format.")
+    parser.add_option("", "--report_file", action="store", dest="report_file", metavar="report_file", default=None,
+                      help="Optional CSV file to store the results. Will overwrite.")
     # SETUP Logging
     logger = setupLogging()
+
+
 
     try:
         (opts, args) = parser.parse_args(sys.argv[1:])
@@ -174,12 +186,16 @@ if (__name__ == '__main__'):
         parser.print_help()
         sys.exit(2)
 
+    if not opts.policy_name:
+        logger.error("--policy_name is required")
+        sys.exit(2)
+
     if opts.username and opts.password:
         ts.authenticate(opts.username, opts.password)
     elif os.environ.has_key('SA_USER') and os.environ.has_key('SA_PWD'):
         ts.authenticate(os.environ['SA_USER'], os.environ['SA_PWD'])
     else:
-        print "Username and Password not provided. Script may fail unless running in OGSH. \n Specify with -u username -p password"
+        logger.info("Username and Password not provided. Script may fail unless running in OGSH. \n Specify with -u username -p password")
 
     try:
         server_service = ts.server.ServerService
@@ -189,7 +205,7 @@ if (__name__ == '__main__'):
         update_rollup_service = ts.pkg.windows.UpdateRollupService
         service_pack_service = ts.pkg.windows.ServicePackService
     except:
-        print "Error initializing services to HPSA"
+        logger.error("Error initializing services to HPSA")
         sys.exit(2)
 
     filter = Filter()
@@ -197,23 +213,26 @@ if (__name__ == '__main__'):
     if opts.platform_filter:
         filter.expression = "%s & (%s)" % (filter.expression, opts.platform_filter)
     platformRefs = platform_service.findPlatformRefs(filter)
-    begin_date = convertToEpoch(opts.begin_date)
+
+    nameTemplate = Template(opts.policy_name)
     policyDict = {}
     for platformRef in platformRefs:
         platformObject = {}
         platformObject["platform"] = platformRef
         hfFilter = Filter()
         hfFilter.objectType = "patch_unit"
-        hfFilter.expression = '((patch_unit_platform_id = %s) & (PatchVO.modifiedDate GREATER_THAN_OR_EQUAL_TO %d))' % (
-        platformRef.id, 1492095110000)
+        hfFilter.expression = '(patch_unit_platform_id = %s)' % platformRef.id
+        if opts.begin_date:
+            hfFilter.expression = "%s & (PatchVO.createdDate GREATER_THAN_OR_EQUAL_TO %d)" % ( hfFilter.expression, convertToEpoch(opts.begin_date))
         if opts.end_date:
-            hfFilter.expression = "%s & (PatchVO.modifiedDate LESS_THAN_OR_EQUAL_TO %d)" % (
-            hfFilter.expression, convertToEpoch(opts.end_date))
+            hfFilter.expression = "%s & (PatchVO.createdDate LESS_THAN_OR_EQUAL_TO %d)" % (hfFilter.expression, convertToEpoch(opts.end_date))
+
         platformObject["hotfix"] = GetPatchRefsByFilter(type="hotfix", filter=hfFilter, whitelist=opts.whitelist)
         platformObject["update_rollup"] = GetPatchRefsByFilter(type="update_rollup", filter=hfFilter,
                                                                whitelist=opts.whitelist)
         platformObject["service_pack"] = GetPatchRefsByFilter(type="service_pack", filter=hfFilter,
                                                               whitelist=opts.whitelist)
+
+        platformObject["policyName"] = nameTemplate.substitute({"name":platformRef.name})
         policyDict[platformRef.name] = platformObject
-    if opts.report:
-        PrintReport(policyDict, "TEST")
+    PrintReport(policyDict, file = opts.report_file)

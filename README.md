@@ -169,6 +169,28 @@ However, the remediation script can take up 30+ minutes to run if you are target
 Ensure that the server you are running from has a solid network connection. Or if using the Global Shell, ensure that your VPN does not time out.
 
 
+## Manage Patch Policies
+Examples:
+These assume a CMD shell. 
+
+Replace ^ with \ when using BASH.
+Replace $ with \$ when using BASH.
+
+#### Report to STDOUT
+```bash
+python manage_patch_policies.py --report ^
+    --policy_name "OS Unfiltered Updates - July 2017 - $name" ^
+    --begin_date "20170610.103212"
+```
+
+#### Report to File.
+```bash
+python manage_patch_policies.py --report ^
+    --report_file test.csv ^
+    --policy_name "OS Unfiltered Updates - July 2017 - $name" ^
+    --begin_date "20170610.103212"
+```
+
 
 
 #### License and Legal
