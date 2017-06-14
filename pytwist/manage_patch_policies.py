@@ -235,6 +235,8 @@ if (__name__ == '__main__'):
                       help="Instead of creating policies. Don't make any changes to SA. Only report")
     parser.add_option("", "--attach_platform_group", action="store_true", dest="attach_platform_group", metavar="attach_platform_group", default=False,
                       help="Use this to attach the policies to the OS Level Group.")
+    parser.add_option("", "--remove_existing_patches", action="store_true", dest="remove_existing_patches", metavar="remove_existing_patches", default=False,
+                      help="Use this flag to clean policy of all existing patches")
     # SETUP Logging
     logger = setupLogging()
 
@@ -331,8 +333,12 @@ if (__name__ == '__main__'):
                     patchRefs.append(p.ref)
         if len(patchRefs)>0:
             policyRef = CreateWindowsPatchPolicy(options['policyName'], options['platform'])
-            wpps.removeAllPatches([policyRef])
-            wpps.addPatches([policyRef], patchRefs)
+            if opts.remove_existing_patches
+                logger.info("Removing all existing patches from %s" % policyRef.name)
+                wpps.removeAllPatches([policyRef])
+            for p in patchRefs:
+                logger.debug("Adding %s to %s" % (p.name, policyRef.name))
+                wpps.addPatches([policyRef], patchRefs)
             if opts.attach_platform_group:
                 platformDeviceGroup = platform_service.getPlatformDeviceGroup(platformRef)
                 logger.info("attaching Policy:%s to DeviceGroup: %s (%s)" % (policyRef.name, platformDeviceGroup.name, platformDeviceGroup.id))
