@@ -176,22 +176,32 @@ These assume a CMD shell.
 Replace ^ with \ when using BASH.
 Replace $ with \$ when using BASH.
 
-#### Report to STDOUT
+
+
+#### Example for June
+The following creates the June Policies for HPSA based on a KB Whitelist.
 ```bash
 python manage_patch_policies.py --report ^
-    --policy_name "OS Unfiltered Updates - July 2017 - $name" ^
-    --begin_date "20170610.103212"
+--report_file june_patches.csv ^
+    --policy_name "OS Security Updates - June 2017 - $name Patch Policy" ^
+    --whitelist 4022727,4022714,4022715,4022725,4022717,4022718,4022722,4022013,4022887,3217845,4018106,4022884,4024402,4022883,4022008,4022010,4021923,4021903,4019204,4022714,4021558,4022715,4022727,4022725,3203432,3203387,3191837,3191844,3203382,3191939,3191828,3191848,3203427,3203484,3203399,3191945,3203393,3191932,3203467,3191938,3191898,3203458,3203438,3203485,3203391,3162051,3203386,3203436,3178667,3191882,3191943,3191944,3203463,3118389,3203460,3212223,3203441,3203464,3191908,3203430,3203466,3203392,3118304,3203383,3203461,3172445,3203384,3203390,3127888,3127894,4023307,3203382,3191939,4022730 ^
+    --attach_platform_group ^
+    --platform_filter "platform_name CONTAINS 2012" --dry_run
 ```
 
-#### Report to File.
+#### Example for Generic Patch Policy
+The following adds any new patches created after 20170601.103213 to Generic Policy.
+
+Policies are reused if they already exist.
 ```bash
-python manage_patch_policies.py --report ^
-    --report_file test.csv ^
-    --policy_name "OS Unfiltered Updates - July 2017 - $name" ^
-    --begin_date "20170610.103212"
+python manage_patch_policies.py ^
+--report --report_file june_patches.csv ^
+--begin_date 20170601.103213 ^
+--policy_name "OS Quality Updates - $name Patch Policy" ^
+--platform_filter "platform_name CONTAINS win" ^
+--attach_platform_group ^
+--blacklist 4022727,4022714,4022715,4022725,4022717,4022718,4022722,4022013,4022887,3217845,4018106,4022884,4024402,4022883,4022008,4022010,4021923,4021903,4019204,4022714,4021558,4022715,4022727,4022725,3203432,3203387,3191837,3191844,3203382,3191939,3191828,3191848,3203427,3203484,3203399,3191945,3203393,3191932,3203467,3191938,3191898,3203458,3203438,3203485,3203391,3162051,3203386,3203436,3178667,3191882,3191943,3191944,3203463,3118389,3203460,3212223,3203441,3203464,3191908,3203430,3203466,3203392,3118304,3203383,3203461,3172445,3203384,3203390,3127888,3127894,4023307,3203382,3191939,4022730
 ```
-
-
 
 #### License and Legal
 All scripts are provided under the MIT License, unless otherwise noted, and are provided without warranty express or implied. 
