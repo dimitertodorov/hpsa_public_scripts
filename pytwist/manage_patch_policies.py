@@ -323,30 +323,31 @@ if (__name__ == '__main__'):
         policyDict[platformRef.name] = platformObject
     if opts.report:
         PrintReport(policyDict, file=opts.report_file)
-    for platformName, options in policyDict.iteritems():
-        platformRef = options["platform"]
-        patchRefs = []
-        for type in ["hotfix", "update_rollup", "service_pack"]:
-            if len(options[type]) != 0:
-                logger.debug("loading %d %s for %s" % (len(options[type]), type, platformRef.name))
-                for p in options[type]:
-                    patchRefs.append(p.ref)
-        if len(patchRefs)>0:
-            policyRef = CreateWindowsPatchPolicy(options['policyName'], options['platform'])
-            if opts.remove_existing_patches
-                logger.info("Removing all existing patches from %s" % policyRef.name)
-                wpps.removeAllPatches([policyRef])
-            for p in patchRefs:
-                logger.debug("Adding %s to %s" % (p.name, policyRef.name))
-                wpps.addPatches([policyRef], patchRefs)
-            if opts.attach_platform_group:
-                platformDeviceGroup = platform_service.getPlatformDeviceGroup(platformRef)
-                logger.info("attaching Policy:%s to DeviceGroup: %s (%s)" % (policyRef.name, platformDeviceGroup.name, platformDeviceGroup.id))
-                wpps.attachToPolicies([policyRef],[platformDeviceGroup])
+    if not opts.dry_run:
+        for platformName, options in policyDict.iteritems():
+            platformRef = options["platform"]
+            patchRefs = []
+            for type in ["hotfix", "update_rollup", "service_pack"]:
+                if len(options[type]) != 0:
+                    logger.debug("loading %d %s for %s" % (len(options[type]), type, platformRef.name))
+                    for p in options[type]:
+                        patchRefs.append(p.ref)
+            if len(patchRefs)>0:
+                policyRef = CreateWindowsPatchPolicy(options['policyName'], options['platform'])
+                if opts.remove_existing_patches:
+                    logger.info("Removing all existing patches from %s" % policyRef.name)
+                    wpps.removeAllPatches([policyRef])
+                for p in patchRefs:
+                    logger.debug("Adding %s to %s" % (p.name, policyRef.name))
+                    wpps.addPatches([policyRef], patchRefs)
+                if opts.attach_platform_group:
+                    platformDeviceGroup = platform_service.getPlatformDeviceGroup(platformRef)
+                    logger.info("attaching Policy:%s to DeviceGroup: %s (%s)" % (policyRef.name, platformDeviceGroup.name, platformDeviceGroup.id))
+                    wpps.attachToPolicies([policyRef],[platformDeviceGroup])
+                else:
+                    logger.warn("policy is not being attached to anything: %s)" % (policyRef.name))
+                policyDescription = GeneratePolicyDescription(policyRef, baseDescription="Associated:")
+                policyRef = CreateWindowsPatchPolicy(options['policyName'], options['platform'], policyDescription)
             else:
-                logger.warn("policy is not being attached to anything: %s)" % (policyRef.name))
-            policyDescription = GeneratePolicyDescription(policyRef, baseDescription="Associated:")
-            policyRef = CreateWindowsPatchPolicy(options['policyName'], options['platform'], policyDescription)
-        else:
-            logger.info("No Patches to be added for %s" % platformRef.name)
+                logger.info("No Patches to be added for %s" % platformRef.name)
 
