@@ -74,13 +74,18 @@ def GetPatchRefsByFilter(type='hotfix', filter=None, blacklist=None, whitelist=N
         patchVOs = service_pack_service.getServicePackVOs(patchRefs)
     else:
         return []
-
+    whitelist_pattern_string = ""
+    for whitelistKb in whitelist:
+        whitelist_pattern_string = whitelist_pattern_string + "(.*%s.*)|" % whitelistKb
+    whitelist_pattern = re.compile(whitelist_pattern_string.rstrip("|"))
     for patch in patchVOs:
         if len(patch.supersededByPatches) == 0:
             if whitelist and patch.kbId in whitelist:
                 logger.debug("whitelisted and approved %s", patch.kbId)
+            elif whitelist and whitelist_pattern.match(patch.fileName):
+                logger.debug("filename whitelisted and approved %s", patch.kbId)
             elif whitelist and not (patch.kbId in whitelist):
-                logger.debug("not in whitelist %s", patch.kbId)
+                #logger.debug("not in whitelist %s", patch.kbId)
                 continue
             else:
                 logger.debug("approved %s", patch.kbId)
@@ -209,11 +214,12 @@ if (__name__ == '__main__'):
     parser.add_option("-p", "--password", action="store", dest="password", metavar="password", default=None,
                       help="Password")
     parser.add_option("", "--policy_name", action="store", dest="policy_name", metavar="policy_name",
-                      default=None,
-                      help="Policy Name. Example \"OS Security Updates - June 2017 - $platformName\"")
+                      #default=None,
+                      default="OS Security Updates - January 2019 - $name Patch Policy",
+                      help="Policy Name. Example \"OS Security Updates - October 2018 - $platformName\"")
     parser.add_option("", "--platform_filter", action="store", dest="platform_filter", metavar="platform_filter",
-                      #default="platform_name CONTAINS \"2012\"",
-                      default=None,
+                      default="((platform_name CONTAINS 2012)|(platform_name CONTAINS 2008)|(platform_name CONTAINS 2016))&(platform_name NOT_CONTAINS IA)",
+                      #default=None,
                       help="Filter PlatformRefs e.g. \"platform_name CONTAINS 2012\"")
     parser.add_option("", "--begin_date", action="store", dest="begin_date", metavar="begin_date",
                       default=None,
@@ -222,14 +228,14 @@ if (__name__ == '__main__'):
                       default=None,
                       help="Date Filter - e.g. 20220611.103212")
     parser.add_option("", "--whitelist", action="store", dest="whitelist", metavar="whitelist",
-                      default=None,
+                      default="4461589,4461595,4461591,4480960,4480056,4480961,4480962,4480964,4480965,4480966,4471389,4468742,4476698,4461623,4461620,4461624,4461625,4022162,3172522,4461537,4461535,4480072,4480083,4480070,4480071,4480076,4480074,4461601,4462112,2596760,4480086,4461598,4480116,4480075,4461594,4480973,4480972,4461596,2553332,4480957,4480978,4461635,4461634,4461633,4461543,4476755,4461612,4480085,4480084,4461617,4461614",
                       help="Optional comma-separated Whitelist to allow specific KBs. Numbers Only. Default: Allow All. \n Example \"4022717,4022722,4019111\"")
     parser.add_option("", "--blacklist", action="store", dest="blacklist", metavar="blacklist",
                       default=None,
                       help="Optional comma-separated blacklist to ignore specific KBs. Numbers Only. Default: Allow All. \n Example \"4022717,4022722,4019111\"")
     parser.add_option("", "--report", action="store_true", dest="report", metavar="report", default=False,
                       help="Report Policy Object to File")
-    parser.add_option("", "--report_file", action="store", dest="report_file", metavar="report_file", default=None,
+    parser.add_option("", "--report_file", action="store", dest="report_file", metavar="report_file", default="june_updates.csv",
                       help="Optional CSV file to store the results. Will overwrite.")
     parser.add_option("", "--dry_run", action="store_true", dest="dry_run", metavar="dry_run", default=False,
                       help="Instead of creating policies. Don't make any changes to SA. Only report")
